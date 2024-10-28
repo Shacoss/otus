@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: health-service
+  name: user-crud
 spec:
   replicas: 2
   strategy:
@@ -11,16 +11,16 @@ spec:
       maxUnavailable: 1
   selector:
     matchLabels:
-      app: health-service
+      app: user-crud
   template:
     metadata:
       labels:
-        app: health-service
+        app: user-crud
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: health-service
-          image: shacoss/health-service:1.0
+        - name: user-crud
+          image: shacoss/user-crud:latest
           resources:
             requests:
               memory: "64Mi"
@@ -30,13 +30,16 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 8000
-              name: health-port
+              name: user-crud-port
           livenessProbe:
             httpGet:
               port: 8000
               path: /health
             initialDelaySeconds: 10
             periodSeconds: 10
-
-
+          envFrom:
+            - configMapRef:
+                name: db-settings
+            - secretRef:
+                name: db-secret
 

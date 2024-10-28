@@ -1,26 +1,19 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: health-service-ingress
+  name: user-crud-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /health
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
     - host: arch.homework
       http:
         paths:
-          - path: /otusapp/([A-Za-z]+)/(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: health-service-sv
-                port:
-                 number: 80
-          - path: /health
+          - path: /
             pathType: Prefix
             backend:
               service:
-                name: health-service-sv
+                name: user-crud-sv
                 port:
                   number: 80

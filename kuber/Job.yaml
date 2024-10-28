@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init-job
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: postgres-init
+          image: postgres:17.0
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_USER
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: db-settings
+                  key: DB_HOST
+            - name: DBNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: db-settings
+                  key: DB_NAME
+          command: ["/bin/bash", "-c"]
+          args:
+            - psql -d "$DBNAME" -f /scripts/init.sql
+          volumeMounts:
+            - name: sql-script
+              mountPath: /scripts
+      volumes:
+        - name: sql-script
+          configMap:
+            name: db-init-script

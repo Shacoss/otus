@@ -1,0 +1,13 @@
+global:
+  postgresql:
+    auth:
+      postgresPassword: postgres
+      username: otus_user
+      password: pass
+      database: otus
+image:
+  tag: "17.0.0"
+primary:
+  persistence:
+    enabled: true
+    size: 1Gi

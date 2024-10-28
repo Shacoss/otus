@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-settings
+data:
+  DB_USER: "otus_user"
+  DB_PASSWORD: "pass"
+  DB_HOST: "postgres-postgresql"
+  DB_PORT: "5432"
+  DB_NAME: "otus"

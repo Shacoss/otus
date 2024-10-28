@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: health-service-sv
+  name: user-crud-sv
 spec:
   selector:
-    app: health-service
+    app: user-crud
   ports:
     - protocol: TCP
       port: 80
-      targetPort: health-port
+      targetPort: user-crud-port
   type: NodePort

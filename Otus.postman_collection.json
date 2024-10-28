@@ -7,49 +7,101 @@
 	},
 	"item": [
 		{
-			"name": "hm3",
-			"item": [
-				{
-					"name": "http://arch.homework/health",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://arch.homework/health",
-							"protocol": "http",
-							"host": [
-								"arch",
-								"homework"
-							],
-							"path": [
-								"health"
-							]
+			"name": "create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"name\",\n    \"email\":\"email\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
 						}
-					},
-					"response": []
+					}
 				},
-				{
-					"name": "http://arch.homework/otusapp/SomeName/health",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://arch.homework/otusapp/SomeName/health",
-							"protocol": "http",
-							"host": [
-								"arch",
-								"homework"
-							],
-							"path": [
-								"otusapp",
-								"SomeName",
-								"health"
-							]
-						}
-					},
-					"response": []
+				"url": {
+					"raw": "http://arch.homework/user",
+					"protocol": "http",
+					"host": [
+						"arch",
+						"homework"
+					],
+					"path": [
+						"user"
+					]
 				}
-			]
+			},
+			"response": []
+		},
+		{
+			"name": "update",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"name_1\",\n    \"email\":\"email_1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://arch.homework/user/1",
+					"protocol": "http",
+					"host": [
+						"arch",
+						"homework"
+					],
+					"path": [
+						"user",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://arch.homework/user/1",
+					"protocol": "http",
+					"host": [
+						"arch",
+						"homework"
+					],
+					"path": [
+						"user",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://arch.homework/user/2",
+					"protocol": "http",
+					"host": [
+						"arch",
+						"homework"
+					],
+					"path": [
+						"user",
+						"2"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
