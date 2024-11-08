@@ -17,6 +17,11 @@ type Handler struct {
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	json.NewDecoder(r.Body).Decode(&user)
+	var isUserValid = isValid(user)
+	if !isUserValid {
+		http.Error(w, "Invalid user", http.StatusInternalServerError)
+		return
+	}
 	var id int64
 	err := h.DB.QueryRow("INSERT INTO public.user (name, email) VALUES ($1, $2) RETURNING id", user.Name, user.Email).Scan(&id)
 	if err != nil {
@@ -50,6 +55,11 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	var user models.User
 	json.NewDecoder(r.Body).Decode(&user)
+	var isUserValid = isValid(user)
+	if !isUserValid {
+		http.Error(w, "Invalid user", http.StatusInternalServerError)
+		return
+	}
 	_, err := h.DB.Exec("UPDATE public.user SET name=$1, email=$2 WHERE id=$3", user.Name, user.Email, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -69,4 +79,14 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func isValid(user models.User) bool {
+	if user.Name == "" {
+		return false
+	}
+	if user.Email == "" {
+		return false
+	}
+	return true
 }

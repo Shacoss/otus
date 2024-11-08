@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
 	"otus/handlers"
+	"otus/metric"
 )
 
 var db *sql.DB
@@ -25,15 +27,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not connect to db: %v", err)
 	}
+	metric.RegisterMetrics()
 	userHandler := &handlers.Handler{DB: db}
 	router := mux.NewRouter()
-	router.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
-	router.HandleFunc("/user", userHandler.CreateUser).Methods("POST")
-	router.HandleFunc("/user/{id}", userHandler.GetUser).Methods("GET")
-	router.HandleFunc("/user/{id}", userHandler.UpdateUser).Methods("PUT")
-	router.HandleFunc("/user/{id}", userHandler.DeleteUser).Methods("DELETE")
-
-	// Запуск сервера
+	router.HandleFunc("/health", handlers.InstrumentedHandler(handlers.HealthHandler, "GET", "/health")).Methods("GET")
+	router.HandleFunc("/user", handlers.InstrumentedHandler(userHandler.CreateUser, "POST", "/user")).Methods("POST")
+	router.HandleFunc("/user/{id}", handlers.InstrumentedHandler(userHandler.GetUser, "GET", "/user/{id}")).Methods("GET")
+	router.HandleFunc("/user/{id}", handlers.InstrumentedHandler(userHandler.UpdateUser, "PUT", "/user/{id}")).Methods("PUT")
+	router.HandleFunc("/user/{id}", handlers.InstrumentedHandler(userHandler.DeleteUser, "DELETE", "/user/{id}")).Methods("DELETE")
+	router.Handle("/metrics", promhttp.Handler())
 	log.Println("Server starting on port 8000...")
 	if err := http.ListenAndServe(":8000", router); err != nil {
 		log.Fatalf("Failed to start server: %s", err)
