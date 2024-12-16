@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	models "otus/model"
+	"otus/pkg/model"
 )
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {

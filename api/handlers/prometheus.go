@@ -3,7 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"otus/metric"
+	"otus/pkg/metric"
 	"time"
 )
 

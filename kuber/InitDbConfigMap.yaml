@@ -2,10 +2,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: db-init-script
+  namespace: otus-hw6
 data:
   init.sql: |
     create table if not exists public.user(
         id serial primary key,
         name character varying,
-        email character varying
+        email character varying,
+        password character varying,
+        constraint email_unique UNIQUE (email)
     );

@@ -1,7 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: user-crud
+  name: auth-service
+  namespace: otus-hw6
 spec:
   replicas: 1
   strategy:
@@ -11,16 +12,16 @@ spec:
       maxUnavailable: 1
   selector:
     matchLabels:
-      app: user-crud
+      app: auth-service
   template:
     metadata:
       labels:
-        app: user-crud
+        app: auth-service
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: user-crud
-          image: shacoss/user-crud:latest
+        - name: auth-service
+          image: shacoss/auth-service:latest
           resources:
             requests:
               memory: "64Mi"
@@ -29,17 +30,10 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 8000
-              name: user-crud-port
-          livenessProbe:
-            httpGet:
-              port: 8000
-              path: /health
-            initialDelaySeconds: 10
-            periodSeconds: 10
+            - containerPort: 8080
+              name: auth-port
           envFrom:
             - configMapRef:
                 name: db-settings
             - secretRef:
                 name: db-secret
-
