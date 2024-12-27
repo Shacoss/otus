@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-service-sv
+  name: notification-service-sv
   namespace: otus-hw7
 spec:
   selector:
-    app: auth-service
+    app: notification-service
   ports:
     - protocol: TCP
       port: 80
-      targetPort: auth-port
+      targetPort: not-port
   type: NodePort

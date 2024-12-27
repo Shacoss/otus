@@ -2,13 +2,35 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: db-init-script
-  namespace: otus-hw6
+  namespace: otus-hw7
 data:
   init.sql: |
-    create table if not exists public.user(
+    create table if not exists public.user
+    (
         id serial primary key,
-        name character varying,
-        email character varying,
-        password character varying,
-        constraint email_unique UNIQUE (email)
+        name character varying not null,
+        email character varying not null,
+        password character varying not null,
+        constraint email_unique unique (email)
+    );
+    create table if not exists public.billing
+    (
+    	id serial primary key,  
+        user_id integer not null,
+        account numeric not null default 0.0,
+    	constraint user_id_unique unique (user_id)
+    );
+    create table if not exists public.order
+    (
+    	id serial primary key,
+        user_id integer not null,
+        price numeric not null,
+        status character varying not null
+    );
+    create table if not exists public.notification
+    (
+        user_id bigint not null,
+        order_id bigint not null,
+        status character varying not null,
+        constraint notification_pkey primary key (user_id, order_id)
     );

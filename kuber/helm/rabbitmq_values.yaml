@@ -1,0 +1,5 @@
+auth:
+  username: otus_user
+  password: pass
+image:
+  tag: "4.0.5"

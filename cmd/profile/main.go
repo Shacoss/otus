@@ -5,13 +5,15 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
+	"os"
 	"otus/api/handlers"
+	"otus/internal/auth"
 	"otus/internal/user"
-	"otus/internal/util"
+	"otus/pkg/db"
 )
 
 func main() {
-	db, err := util.CreateDbConnection()
+	db, err := db.CreateDbConnection()
 	if err != nil {
 		log.Fatalf("Could not connect to db: %v", err)
 	}
@@ -19,9 +21,10 @@ func main() {
 	userStore := user.NewUserStore(db)
 	userHandler := handlers.NewUserHandler(*userStore)
 	r := mux.NewRouter()
-	r.HandleFunc("/user/profile", userHandler.UpdateUser).Methods("PUT")
-	r.HandleFunc("/user/profile", userHandler.GetUser).Methods("GET")
+	r.HandleFunc("/user/profile", auth.AuthMiddleware(userHandler.UpdateUser)).Methods("PUT")
+	r.HandleFunc("/user/profile", auth.AuthMiddleware(userHandler.GetUser)).Methods("GET")
 	r.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
-	log.Println("Server running on :8081")
-	log.Fatal(http.ListenAndServe(":8081", r))
+	port := os.Getenv("SERVER_PORT")
+	log.Println("Server running on " + port)
+	log.Fatal(http.ListenAndServe(port, r))
 }

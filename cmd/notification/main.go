@@ -2,18 +2,15 @@ package main
 
 import (
 	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
 	"otus/api/handlers"
 	"otus/internal/auth"
-	"otus/internal/user"
+	"otus/internal/notification"
 	"otus/pkg/broker"
 	"otus/pkg/db"
 )
-
-var jwtSecret = []byte("supersecretkey")
 
 func main() {
 	db, err := db.CreateDbConnection()
@@ -27,14 +24,13 @@ func main() {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer rmq.Close()
-	userStore := user.NewUserStore(db)
-	authService := auth.NewAuthService(rmq, "billing_create")
-	authHandler := handlers.NewAuthHandler(*userStore, jwtSecret, *authService)
+	notificationStore := notification.NewNotificationStore(db)
+	notificationService := notification.NewNotificationService(rmq, *notificationStore)
+	notificationService.ConsumeNotification("notification", "notification_service")
+	notificationHandler := handlers.NewNotificationHandler(*notificationStore)
 	r := mux.NewRouter()
-	r.HandleFunc("/auth/register", authHandler.RegisterHandler).Methods("POST")
-	r.HandleFunc("/auth/login", authHandler.LoginHandler).Methods("GET")
-	r.HandleFunc("/auth/validate", authHandler.ValidateHandler).Methods("GET")
-	r.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
+	r.HandleFunc("/notification", auth.AuthMiddleware(notificationHandler.GetNotifications)).Methods("GET")
+	r.HandleFunc("/notification/{OrderID}", auth.AuthMiddleware(notificationHandler.GetNotificationByOrderID)).Methods("GET")
 	port := os.Getenv("SERVER_PORT")
 	log.Println("Server running on " + port)
 	log.Fatal(http.ListenAndServe(port, r))

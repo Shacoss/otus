@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth-service-sv
+  name: order-service-sv
   namespace: otus-hw7
 spec:
   selector:
-    app: auth-service
+    app: order-service
   ports:
     - protocol: TCP
       port: 80
-      targetPort: auth-port
+      targetPort: order-port
   type: NodePort

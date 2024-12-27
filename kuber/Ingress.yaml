@@ -2,9 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: auth-service-ingress
-  namespace: otus-hw6
+  namespace: otus-hw7
   annotations:
-    nginx.ingress.kubernetes.io/auth-url: "http://auth-service-sv.otus-hw6.svc.cluster.local/auth/validate"
+    nginx.ingress.kubernetes.io/auth-url: "http://auth-service-sv.otus-hw7.svc.cluster.local/auth/validate"
     nginx.ingress.kubernetes.io/auth-response-headers: "X-Email,X-UserId"
 spec:
   ingressClassName: nginx
@@ -12,10 +12,24 @@ spec:
     - host: arch.homework
       http:
         paths:
-          - path: /
+          - path: /billing
             pathType: Prefix
             backend:
               service:
-                name: app-service-sv
+                name: billing-service-sv
+                port:
+                  number: 80
+          - path: /order
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service-sv
+                port:
+                  number: 80
+          - path: /notification
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service-sv
                 port:
                   number: 80

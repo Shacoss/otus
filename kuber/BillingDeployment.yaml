@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-service
+  name: billing-service
   namespace: otus-hw7
 spec:
   replicas: 1
@@ -12,16 +12,16 @@ spec:
       maxUnavailable: 1
   selector:
     matchLabels:
-      app: auth-service
+      app: billing-service
   template:
     metadata:
       labels:
-        app: auth-service
+        app: billing-service
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: auth
-          image: shacoss/auth-service:latest
+        - name: billing
+          image: shacoss/billing-service:latest
           resources:
             requests:
               memory: "64Mi"
@@ -31,7 +31,7 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 8080
-              name: auth-port
+              name: billing-port
           envFrom:
             - configMapRef:
                 name: db-settings

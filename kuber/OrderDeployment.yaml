@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-service
-  namespace: otus-hw6
+  name: order-service
+  namespace: otus-hw7
 spec:
   replicas: 1
   strategy:
@@ -12,16 +12,16 @@ spec:
       maxUnavailable: 1
   selector:
     matchLabels:
-      app: app-service
+      app: order-service
   template:
     metadata:
       labels:
-        app: app-service
+        app: order-service
     spec:
       automountServiceAccountToken: false
       containers:
-        - name: app-service
-          image: shacoss/app-service:latest
+        - name: order
+          image: shacoss/order-service:latest
           resources:
             requests:
               memory: "64Mi"
@@ -30,10 +30,17 @@ spec:
               memory: "128Mi"
               cpu: "500m"
           ports:
-            - containerPort: 8081
-              name: app-port
+            - containerPort: 8080
+              name: order-port
           envFrom:
             - configMapRef:
                 name: db-settings
+            - configMapRef:
+                name: rabbitmq-settings
             - secretRef:
                 name: db-secret
+            - secretRef:
+                name: rabbitmq-secret
+          env:
+            - name: SERVER_PORT
+              value: ":8080"

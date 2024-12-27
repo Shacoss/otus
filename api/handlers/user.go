@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"otus/internal/user"
+	"otus/pkg/exception"
 	models "otus/pkg/model"
-	"strconv"
 )
 
 type UserHandler struct {
@@ -17,8 +17,10 @@ func NewUserHandler(store user.Store) *UserHandler {
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	userProfile, err := getUser(h.store, w, r)
-	if err == true {
+	userID := r.Context().Value("userID").(int64)
+	userProfile, err := h.store.GetUser(userID)
+	isError := exception.HttpErrorHandler("User not found", err, w)
+	if isError {
 		return
 	}
 	w.Header().Set("content-type", "application/json")
@@ -26,8 +28,10 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	userProfile, userProfileError := getUser(h.store, w, r)
-	if userProfileError == true {
+	userID := r.Context().Value("userID").(int64)
+	userProfile, err := h.store.GetUser(userID)
+	isError := exception.HttpErrorHandler("User not found", err, w)
+	if isError {
 		return
 	}
 	var userRequest models.User
@@ -46,28 +50,4 @@ func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("content-type", "application/json")
 	json.NewEncoder(w).Encode(userUpdated)
-}
-
-func getUser(db user.Store, w http.ResponseWriter, r *http.Request) (user *models.User, err bool) {
-	userIDString := r.Header.Get("X-UserID")
-	email := r.Header.Get("X-Email")
-	if userIDString == "" || email == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return nil, true
-	}
-	userID, parseError := strconv.ParseInt(userIDString, 10, 64)
-	if parseError != nil {
-		http.Error(w, parseError.Error(), http.StatusInternalServerError)
-		return nil, true
-	}
-	userProfile, userError := db.GetUser(userID)
-	if userError != nil {
-		http.Error(w, "User not found", http.StatusInternalServerError)
-		return nil, true
-	}
-	if email != userProfile.Email {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return nil, true
-	}
-	return userProfile, false
 }
