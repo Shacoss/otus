@@ -24,10 +24,11 @@ func main() {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer rmq.Close()
+	productURL := os.Getenv("PRODUCT_URL")
 	orderStore := order.NewOrderStore(db)
-	orderService := order.NewOrderService(rmq, *orderStore)
+	orderService := order.NewOrderService(rmq, *orderStore, productURL)
 	orderHandler := handlers.NewOrderHandler(*orderStore, *orderService)
-	orderService.GetPaymentResult("oder_billing_response")
+	orderService.OrderResult("order_result")
 	r := mux.NewRouter()
 	r.HandleFunc("/order", auth.AuthMiddleware(orderHandler.CreateOrder)).Methods("POST")
 	r.HandleFunc("/order/{OrderID}", auth.AuthMiddleware(orderHandler.GetOrderByID)).Methods("GET")

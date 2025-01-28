@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: order-service
-  namespace: otus-hw7
+  namespace: otus-hw8
 spec:
   replicas: 1
   strategy:
@@ -44,3 +44,5 @@ spec:
           env:
             - name: SERVER_PORT
               value: ":8080"
+            - name: PRODUCT_URL
+              value: "http://warehouse-service-sv.otus-hw8.svc.cluster.local"

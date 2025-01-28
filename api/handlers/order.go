@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gorilla/mux"
 	"log/slog"
 	"net/http"
@@ -50,19 +51,43 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to parse", http.StatusInternalServerError)
 		return
 	}
+	validate := h.validateOrder(orderRequest)
+	if validate != nil {
+		http.Error(w, validate.Error(), http.StatusBadRequest)
+		return
+	}
+	product, err := h.service.GetProductByID(orderRequest.Product.ID, userID)
+	if err != nil {
+		exception.HttpErrorHandler("Failed to create order. %s", err, w)
+		return
+	}
+	orderRequest.Price = product.Price * float64(orderRequest.Product.Quantity)
 	orderRequest.UserID = userID
-	orderRequest.Status = models.PROCESSING
 	orderID, orderError := h.store.CreateOrder(orderRequest)
 	if orderError != nil {
 		exception.HttpErrorHandler("Failed to create order", orderError, w)
 		return
 	}
 	orderRequest.ID = *orderID
-	makePaymentErr := h.service.MakePayment(orderRequest)
-	if makePaymentErr != nil {
+	orderRequest.Delivery.OrderID = *orderID
+	reservationProductErr := h.service.ReservationProduct(orderRequest)
+	if reservationProductErr != nil {
 		http.Error(w, "Failed to handle order", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("X-OrderID", strconv.FormatInt(*orderID, 10))
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (h *OrderHandler) validateOrder(order models.Order) error {
+	if order.Product.ID == 0 {
+		return errors.New("product id is empty or 0")
+	} else if order.Product.Quantity == 0 {
+		return errors.New("product quantity is empty or 0")
+	} else if order.Delivery.Date.IsZero() {
+		return errors.New("delivery date is empty")
+	} else if order.Delivery.Address == "" {
+		return errors.New("delivery address is empty")
+	}
+	return nil
 }

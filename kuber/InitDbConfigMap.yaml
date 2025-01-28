@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: db-init-script
-  namespace: otus-hw7
+  namespace: otus-hw8
 data:
   init.sql: |
     create table if not exists public.user
@@ -24,13 +24,31 @@ data:
     (
     	id serial primary key,
         user_id integer not null,
+        product_id integer not null,
+        quantity integer not null,
         price numeric not null,
-        status character varying not null
+        status character varying not null default 'PROCESSING'
     );
     create table if not exists public.notification
     (
         user_id bigint not null,
         order_id bigint not null,
         status character varying not null,
+        message character varying,
         constraint notification_pkey primary key (user_id, order_id)
     );
+    create table if not exists public.product
+    (
+        id serial primary key,
+        name character varying not null,
+        price numeric not null,
+        quantity bigint not null
+    );
+    create table if not exists public.delivery
+    (
+    	id serial primary key,
+        order_id integer not null,
+        date date not null,
+        address character varying not null
+    );
+    insert into public.product (name, price, quantity) values ('product_1', 50, 100), ('product_2', 5000, 1), ('product_3', 10, 0);

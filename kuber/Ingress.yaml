@@ -2,9 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: auth-service-ingress
-  namespace: otus-hw7
+  namespace: otus-hw8
   annotations:
-    nginx.ingress.kubernetes.io/auth-url: "http://auth-service-sv.otus-hw7.svc.cluster.local/auth/validate"
+    nginx.ingress.kubernetes.io/auth-url: "http://auth-service-sv.otus-hw8.svc.cluster.local/auth/validate"
     nginx.ingress.kubernetes.io/auth-response-headers: "X-Email,X-UserId"
 spec:
   ingressClassName: nginx
@@ -31,5 +31,12 @@ spec:
             backend:
               service:
                 name: notification-service-sv
+                port:
+                  number: 80
+          - path: /warehouse
+            pathType: Prefix
+            backend:
+              service:
+                name: warehouse-service-sv
                 port:
                   number: 80

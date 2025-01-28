@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: db-settings
-  namespace: otus-hw7
+  namespace: otus-hw8
 data:
   DB_HOST: "postgres-postgresql"
   DB_PORT: "5432"

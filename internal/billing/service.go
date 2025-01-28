@@ -20,39 +20,48 @@ func NewBillingService(broker broker.Broker, store Store) *Service {
 	return &Service{broker: broker, repository: store, log: *logger.GetLogger()}
 }
 
-func (s *Service) RequestBilling(queueOrderRequest string, queueOrderResponse string, queueNotification string) {
-	_ = s.broker.Consume(queueOrderRequest, "", func(message amqp.Delivery, headers map[string]interface{}) {
-		var orderMsg models.Order
-		if err := json.Unmarshal(message.Body, &orderMsg); err != nil {
+func (s *Service) CreatePayment(queue string) {
+	_ = s.broker.Consume(queue, "", func(message amqp.Delivery, headers map[string]interface{}) {
+		var order models.Order
+		if err := json.Unmarshal(message.Body, &order); err != nil {
 			s.log.Error(fmt.Sprintf("Failed to decode JSON: %s", err.Error()))
+			order.Status = models.FAILED
+			order.Message = err.Error()
+			s.paymentResult(order, "reject_delivery")
 			return
 		}
-		billing, err := s.repository.GetBillingByUserID(orderMsg.UserID)
+		billing, err := s.repository.GetBillingByUserID(order.UserID)
 		if err != nil {
-			orderMsg.Status = models.FAILED
-			orderMsg.Message = err.Error()
+			order.Status = models.FAILED
+			order.Message = err.Error()
 		} else {
-			if orderMsg.Price > billing.Account {
-				orderMsg.Status = models.FAILED
-				orderMsg.Message = "Not enough money"
+			if order.Price > billing.Account {
+				order.Status = models.FAILED
+				order.Message = "Not enough money"
 			} else {
-				billing.Account -= orderMsg.Price
+				billing.Account -= order.Price
 				errUpdBilling := s.repository.UpdateBillingByUserID(*billing)
 				if errUpdBilling != nil {
-					orderMsg.Status = models.FAILED
-					orderMsg.Message = err.Error()
+					order.Status = models.FAILED
+					order.Message = err.Error()
 				} else {
-					orderMsg.Status = models.SUCCESS
+					order.Status = models.SUCCESS
 				}
 			}
 		}
-		notification := models.Notification{UserID: orderMsg.UserID, Status: orderMsg.Status, OrderID: orderMsg.ID}
-		_ = s.broker.Publish(queueOrderResponse, orderMsg, nil)
-		_ = s.broker.Publish(queueNotification, notification, nil)
+		if order.Status == models.SUCCESS {
+			s.paymentResult(order, "order_result")
+		} else {
+			s.paymentResult(order, "reject_delivery")
+		}
 	})
 }
 
-func (s *Service) CreateBilling(queue string) {
+func (s *Service) paymentResult(order models.Order, queue string) {
+	_ = s.broker.Publish(queue, order, nil)
+}
+
+func (s *Service) CreateBillingAccount(queue string) {
 	_ = s.broker.Consume(queue, "", func(message amqp.Delivery, headers map[string]interface{}) {
 		var user models.User
 		if err := json.Unmarshal(message.Body, &user); err != nil {

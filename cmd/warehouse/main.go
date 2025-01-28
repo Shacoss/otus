@@ -2,18 +2,15 @@ package main
 
 import (
 	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
 	"otus/api/handlers"
 	"otus/internal/auth"
-	"otus/internal/user"
+	"otus/internal/warehouse"
 	"otus/pkg/broker"
 	"otus/pkg/db"
 )
-
-var jwtSecret = []byte("supersecretkey")
 
 func main() {
 	db, err := db.CreateDbConnection()
@@ -27,14 +24,14 @@ func main() {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer rmq.Close()
-	userStore := user.NewUserStore(db)
-	authService := auth.NewAuthService(rmq, "billing_account_create")
-	authHandler := handlers.NewAuthHandler(*userStore, jwtSecret, *authService)
+	warehouseStore := warehouse.NewWarehouseStore(db)
+	warehouseService := warehouse.NewWarehouseService(rmq, *warehouseStore)
+	warehouseHandler := handlers.NewWarehouseHandler(*warehouseStore)
+	warehouseService.ReservationProduct("reservation_product")
+	warehouseService.ReservationRejectProduct("product_reservation_reject")
 	r := mux.NewRouter()
-	r.HandleFunc("/auth/register", authHandler.RegisterHandler).Methods("POST")
-	r.HandleFunc("/auth/login", authHandler.LoginHandler).Methods("GET")
-	r.HandleFunc("/auth/validate", authHandler.ValidateHandler).Methods("GET")
-	r.HandleFunc("/health", handlers.HealthHandler).Methods("GET")
+	r.HandleFunc("/warehouse/product", auth.AuthMiddleware(warehouseHandler.GetAllProducts)).Methods("GET")
+	r.HandleFunc("/warehouse/product/{ProductID}", auth.AuthMiddleware(warehouseHandler.GetProductByID)).Methods("GET")
 	port := os.Getenv("SERVER_PORT")
 	log.Println("Server running on " + port)
 	log.Fatal(http.ListenAndServe(port, r))
