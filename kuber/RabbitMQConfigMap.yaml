@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: rabbitmq-settings
-  namespace: otus-hw8
+  namespace: otus-hw9
 data:
   RABBITMQ_HOST: "rabbitmq"
   RABBITMQ_PORT: "5672"

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: db-init-script
-  namespace: otus-hw8
+  namespace: otus-hw9
 data:
   init.sql: |
     create table if not exists public.user

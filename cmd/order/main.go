@@ -13,22 +13,23 @@ import (
 )
 
 func main() {
-	db, err := db.CreateDbConnection()
+	postgres, err := db.CreateDbConnection()
 	if err != nil {
 		log.Fatalf("Could not connect to db: %v", err)
 	}
-	defer db.Close()
+	defer postgres.Close()
 	rmq := broker.NewRabbitMQ()
 	err = rmq.Connect()
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer rmq.Close()
+	redis := db.CreateRedisClient()
 	productURL := os.Getenv("PRODUCT_URL")
-	orderStore := order.NewOrderStore(db)
-	orderService := order.NewOrderService(rmq, *orderStore, productURL)
+	orderStore := order.NewOrderStore(postgres)
+	orderService := order.NewOrderService(rmq, *orderStore, *redis, productURL)
 	orderHandler := handlers.NewOrderHandler(*orderStore, *orderService)
-	orderService.OrderResult("order_result")
+	orderService.ConsumeOrderResult("order_result")
 	r := mux.NewRouter()
 	r.HandleFunc("/order", auth.AuthMiddleware(orderHandler.CreateOrder)).Methods("POST")
 	r.HandleFunc("/order/{OrderID}", auth.AuthMiddleware(orderHandler.GetOrderByID)).Methods("GET")

@@ -1,5 +1,16 @@
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "1"
+clustering:
+  enabled: false
 auth:
   username: otus_user
   password: pass
 image:
   tag: "4.0.5"
+plugins: ""
+extraPlugins: ""

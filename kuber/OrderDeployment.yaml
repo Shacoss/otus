@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: order-service
-  namespace: otus-hw8
+  namespace: otus-hw9
 spec:
   replicas: 1
   strategy:
@@ -19,6 +19,25 @@ spec:
         app: order-service
     spec:
       automountServiceAccountToken: false
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:1.28
+          command:
+            - "sh"
+            - "-c"
+            - "until nc -z rabbitmq 5672; do echo 'Waiting for RabbitMQ...'; sleep 5; done"
+        - name: wait-for-redis
+          image: busybox:1.28
+          command:
+            - "sh"
+            - "-c"
+            - "until nc -z redis-master 6379; do echo 'Waiting for Redis...'; sleep 5; done"
+        - name: wait-for-postgres
+          image: busybox:1.28
+          command:
+            - "sh"
+            - "-c"
+            - "until nc -z postgres-postgresql 5432; do echo 'Waiting for PostgreSQL...'; sleep 5; done"
       containers:
         - name: order
           image: shacoss/order-service:latest
@@ -37,6 +56,8 @@ spec:
                 name: db-settings
             - configMapRef:
                 name: rabbitmq-settings
+            - configMapRef:
+                name: redis-settings
             - secretRef:
                 name: db-secret
             - secretRef:
@@ -45,4 +66,4 @@ spec:
             - name: SERVER_PORT
               value: ":8080"
             - name: PRODUCT_URL
-              value: "http://warehouse-service-sv.otus-hw8.svc.cluster.local"
+              value: "http://warehouse-service-sv.otus-hw9.svc.cluster.local"

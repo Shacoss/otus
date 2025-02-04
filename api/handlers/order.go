@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
 	"log/slog"
 	"net/http"
@@ -11,6 +14,7 @@ import (
 	"otus/pkg/logger"
 	models "otus/pkg/model"
 	"strconv"
+	"time"
 )
 
 type OrderHandler struct {
@@ -63,6 +67,16 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	orderRequest.Price = product.Price * float64(orderRequest.Product.Quantity)
 	orderRequest.UserID = userID
+	orderHash := h.CalculateHash(orderRequest)
+	isExistHash, err := h.service.IsExistOrderHash(orderHash)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create order. %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if isExistHash {
+		http.Error(w, "Order already created", http.StatusConflict)
+		return
+	}
 	orderID, orderError := h.store.CreateOrder(orderRequest)
 	if orderError != nil {
 		exception.HttpErrorHandler("Failed to create order", orderError, w)
@@ -70,6 +84,12 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 	orderRequest.ID = *orderID
 	orderRequest.Delivery.OrderID = *orderID
+	err = h.service.SetOrderHash(orderHash)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create order. %s", err.Error()), http.StatusInternalServerError)
+		h.service.SaveOrderResult(orderRequest)
+		return
+	}
 	reservationProductErr := h.service.ReservationProduct(orderRequest)
 	if reservationProductErr != nil {
 		http.Error(w, "Failed to handle order", http.StatusInternalServerError)
@@ -90,4 +110,16 @@ func (h *OrderHandler) validateOrder(order models.Order) error {
 		return errors.New("delivery address is empty")
 	}
 	return nil
+}
+
+func (h *OrderHandler) CalculateHash(order models.Order) string {
+	data := fmt.Sprintf("%d-%d-%d-%s-%s",
+		order.UserID,
+		order.Product.ID,
+		order.Product.Quantity,
+		order.Delivery.Address,
+		time.Time(order.Delivery.Date).Format(time.RFC3339),
+	)
+	hash := sha256.Sum256([]byte(data))
+	return hex.EncodeToString(hash[:])
 }

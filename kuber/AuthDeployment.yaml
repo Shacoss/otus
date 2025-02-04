@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auth-service
-  namespace: otus-hw8
+  namespace: otus-hw9
 spec:
   replicas: 1
   strategy:
@@ -19,6 +19,19 @@ spec:
         app: auth-service
     spec:
       automountServiceAccountToken: false
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox:1.28
+          command:
+            - "sh"
+            - "-c"
+            - "until nc -z rabbitmq 5672; do echo 'Waiting for RabbitMQ...'; sleep 5; done"
+        - name: wait-for-postgres
+          image: busybox:1.28
+          command:
+            - "sh"
+            - "-c"
+            - "until nc -z postgres-postgresql 5432; do echo 'Waiting for PostgreSQL...'; sleep 5; done"
       containers:
         - name: auth
           image: shacoss/auth-service:latest
@@ -44,4 +57,3 @@ spec:
           env:
             - name: SERVER_PORT
               value: ":8080"
-

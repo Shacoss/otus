@@ -24,9 +24,8 @@ func NewRabbitMQ() *RabbitMQ {
 	dbUser := os.Getenv("RABBITMQ_USER")
 	dbPassword := os.Getenv("RABBITMQ_PASSWORD")
 	dbHost := os.Getenv("RABBITMQ_HOST")
-	dbPort := os.Getenv("RABBITMQ_PORT")
 	return &RabbitMQ{
-		URL: fmt.Sprintf("amqp://%s:%s@%s:%s/", dbUser, dbPassword, dbHost, dbPort),
+		URL: fmt.Sprintf("amqp://%s:%s@%s/", dbUser, dbPassword, dbHost),
 		log: *logger.GetLogger(),
 	}
 }
@@ -34,7 +33,7 @@ func NewRabbitMQ() *RabbitMQ {
 func (r *RabbitMQ) Connect() error {
 	conn, err := amqp.Dial(r.URL)
 	if err != nil {
-		r.log.Error("Failed to connect to RabbitMQ: %v", err)
+		r.log.Error(fmt.Sprintf("Failed to connect to RabbitMQ: %v", err.Error()))
 		return err
 	}
 	r.Connection = conn
@@ -53,12 +52,12 @@ func (r *RabbitMQ) Publish(queue string, message interface{}, headers map[string
 	}
 	body, err := json.Marshal(message)
 	if err != nil {
-		r.log.Error("Failed to marshal message: %v", err)
+		r.log.Error(fmt.Sprintf("Failed to marshal message: %v", err.Error()))
 		return err
 	}
 	q, err := r.declareQueue(queue)
 	if err != nil {
-		r.log.Error(fmt.Sprintf("Failed to declare queue: %s", err))
+		r.log.Error(fmt.Sprintf("Failed to declare queue: %v", err.Error()))
 		return err
 	}
 	amqpHeaders := amqp.Table{}
@@ -77,7 +76,7 @@ func (r *RabbitMQ) Publish(queue string, message interface{}, headers map[string
 		},
 	)
 	if err != nil {
-		r.log.Error(fmt.Sprintf("Failed to publish message: %s", err))
+		r.log.Error(fmt.Sprintf("Failed to publish message: %s", err.Error()))
 		return err
 	}
 	r.log.Info(fmt.Sprintf("Message published to queue: %s", queue))
