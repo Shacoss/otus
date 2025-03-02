@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: warehouse-service
-  namespace: otus-hw9
+  namespace: otus-hw10
 spec:
   replicas: 1
   strategy:

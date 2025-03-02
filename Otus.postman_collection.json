@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "29217a9a-37dd-4205-b0ec-a6dd7422ffc7",
-		"name": "Otus",
+		"_postman_id": "cc370ff7-f147-4fa2-a274-54d0c1f1cdf0",
+		"name": "Otus hw10",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10872279"
 	},
@@ -345,7 +345,7 @@
 			"response": []
 		},
 		{
-			"name": "order 1",
+			"name": "order within the available funds",
 			"event": [
 				{
 					"listen": "test",
@@ -410,7 +410,7 @@
 			"response": []
 		},
 		{
-			"name": "order 2",
+			"name": "duplicate order 1",
 			"event": [
 				{
 					"listen": "test",
@@ -474,74 +474,7 @@
 			"response": []
 		},
 		{
-			"name": "order 3",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 202\", function () {",
-							"    pm.response.to.have.status(202);",
-							"    pm.environment.set(\"order3_id\", pm.response.headers.get(\"X-Orderid\"))",
-							"}); "
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"pm.environment.set(\"order1_price\", 90)",
-							"let date = new Date();",
-							"let nextDay = new Date(date.setDate(date.getDate() + 1));",
-							"pm.environment.set(\"next_day_date\", nextDay.toISOString().split('T')[0])",
-							"console.log(\"Waiting for 10 seconds\")",
-							"setTimeout(function(){}, 10100);"
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{user_1_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"product\": {\n        \"id\": 1,\n        \"quantity\": 2\n    },\n    \"delivery\":{\n        \"date\": \"{{next_day_date}}\",\n        \"address\": \"adr1\"\n    }\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://{{baseUrl}}/order",
-					"protocol": "http",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"order"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "order 1 notification",
+			"name": "check money after order 1",
 			"event": [
 				{
 					"listen": "test",
@@ -550,8 +483,12 @@
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
-							"pm.test(\"Order status SUCCESS\", function () {",
-							"    pm.expect(pm.response.json().status).to.eql(\"SUCCESS\");",
+							"pm.test(\"The amount of funds has decreased\", function () {",
+							"    let beforeMoney = pm.environment.get(\"add_billing_money\");",
+							"    let prodcut1Price = pm.environment.get(\"product1_price\");",
+							"    let afterMoney = beforeMoney - prodcut1Price*2;",
+							"    pm.environment.set(\"account_after_order1\", pm.response.json().account);",
+							"    pm.expect(pm.response.json().account).to.eq(afterMoney);",
 							"});"
 						],
 						"type": "text/javascript",
@@ -583,14 +520,170 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://{{baseUrl}}/notification/{{order1_id}}",
+					"raw": "http://{{baseUrl}}/billing",
 					"protocol": "http",
 					"host": [
 						"{{baseUrl}}"
 					],
 					"path": [
-						"notification",
-						"{{order1_id}}"
+						"billing"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get products info after order 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"The quantity of products decreased after order 1\", function () {",
+							"    let product1Quantity = pm.environment.get(\"product1_quantity\");",
+							"    let jsonData = pm.response.json();",
+							"    let product1 = jsonData.find(item => item.id === 1);",
+							"    pm.expect(product1.quantity).to.eql(product1Quantity - 2);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/warehouse/product",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"warehouse",
+						"product"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "order that exceeds the available funds",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 202\", function () {",
+							"    pm.response.to.have.status(202);",
+							"    pm.environment.set(\"order2_id\", pm.response.headers.get(\"X-Orderid\"))",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"product\": {\n        \"id\": 2,\n        \"quantity\": 1\n    },\n    \"delivery\":{\n        \"date\": \"{{next_day_date}}\",\n        \"address\": \"adr1\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{baseUrl}}/order",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"order"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "check money after order 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"The amount of funds has not changed\", function () {",
+							"    let accountBeforeOrder2 = pm.environment.get(\"account_after_order1\");",
+							"    pm.expect(pm.response.json().account).to.eql(accountBeforeOrder2);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/billing",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"billing"
 					]
 				}
 			},
@@ -606,8 +699,104 @@
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
-							"pm.test(\"Order status SUCCESS\", function () {",
-							"    pm.expect(pm.response.json().status).to.eql(\"SUCCESS\");",
+							"pm.test(\"Order status FAILED\", function () {",
+							"    pm.expect(pm.response.json().status).to.eql(\"FAILED\");",
+							"});",
+							"pm.test(\"Error message - Not enough money\", function () {",
+							"    pm.expect(pm.response.json().message).to.eql(\"Not enough money\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/notification/{{order2_id}}",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"notification",
+						"{{order2_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get products info after order 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"The quantity of products did not change after order 2\", function () {",
+							"    let product2Quantity = pm.environment.get(\"product2_quantity\");",
+							"    let jsonData = pm.response.json();",
+							"    let product2 = jsonData.find(item => item.id === 2);",
+							"    pm.expect(product2.quantity).to.eql(product2Quantity);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/warehouse/product",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"warehouse",
+						"product"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "order with invalid date",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 202\", function () {",
+							"    pm.response.to.have.status(202);",
+							"    pm.environment.set(\"order3_id\", pm.response.headers.get(\"X-Orderid\"))",
 							"});"
 						],
 						"type": "text/javascript",
@@ -618,7 +807,110 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"setTimeout(function(){}, 300);"
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"product\": {\n        \"id\": 2,\n        \"quantity\": 1\n    },\n    \"delivery\":{\n        \"date\": \"2025-01-01\",\n        \"address\": \"adr11\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{baseUrl}}/order",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"order"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "check money after order 3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"The amount of funds has not changed\", function () {",
+							"    var accountBeforeOrder2 = pm.environment.get(\"account_after_order1\");",
+							"    pm.expect(pm.response.json().account).to.eql(accountBeforeOrder2);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/billing",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"billing"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "order 3 notification",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Order status FAILED\", function () {",
+							"    pm.expect(pm.response.json().status).to.eql(\"FAILED\");",
+							"});",
+							"pm.test(\"Error message - Invalid delivery date\", function () {",
+							"    pm.expect(pm.response.json().message).to.eql(\"Invalid delivery date\");",
+							"});"
 						],
 						"type": "text/javascript",
 						"packages": {}
@@ -647,6 +939,55 @@
 					"path": [
 						"notification",
 						"{{order3_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get products info after order 3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"The quantity of products did not change after order 3\", function () {",
+							"    let product2Quantity = pm.environment.get(\"product2_quantity\");",
+							"    let jsonData = pm.response.json();",
+							"    let product2 = jsonData.find(item => item.id === 2);",
+							"    pm.expect(product2.quantity).to.eql(product2Quantity);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{user_1_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/warehouse/product",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"warehouse",
+						"product"
 					]
 				}
 			},

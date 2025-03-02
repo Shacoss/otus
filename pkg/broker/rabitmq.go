@@ -8,8 +8,10 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log/slog"
 	"os"
+	"otus/internal/metric"
 	"otus/pkg/logger"
 	"sync"
+	"time"
 )
 
 type RabbitMQ struct {
@@ -46,6 +48,12 @@ func (r *RabbitMQ) Connect() error {
 }
 
 func (r *RabbitMQ) Publish(queue string, message interface{}, headers map[string]interface{}) error {
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start).Seconds()
+		metric.RabbitMQPublishLatency.WithLabelValues(queue).Observe(duration)
+		metric.RabbitMQMessageCounter.WithLabelValues("publish", queue).Inc()
+	}()
 	err := r.openChannel()
 	if err != nil {
 		return err
@@ -98,8 +106,10 @@ func (r *RabbitMQ) Consume(queue string, consumer string, handler func(message a
 		r.log.Error(fmt.Sprintf("Failed to consume messages: %v", err))
 		return err
 	}
+	var wg sync.WaitGroup
 	go func() {
 		for msg := range msgs {
+			wg.Add(1)
 			headers := make(map[string]interface{})
 			for key, value := range msg.Headers {
 				headers[key] = value
@@ -107,7 +117,12 @@ func (r *RabbitMQ) Consume(queue string, consumer string, handler func(message a
 			r.log.Info(fmt.Sprintf("Message consumed from queue: %s", queue))
 			ctx := context.Background()
 			go func(ctx context.Context, message amqp.Delivery) {
+				defer wg.Done()
+				start := time.Now()
 				handler(message, headers)
+				duration := time.Since(start).Seconds()
+				metric.RabbitMQConsumeLatency.WithLabelValues(queue).Observe(duration)
+				metric.RabbitMQMessageCounter.WithLabelValues("consume", queue).Inc()
 			}(ctx, msg)
 		}
 	}()

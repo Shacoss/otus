@@ -1,0 +1,15 @@
+admin:
+  user: "admin"
+  password: "admin"
+service:
+  type: "NodePort"
+config:
+  useGrafanaIniFile: true
+  grafanaIniConfigMap: "grafana-config"
+ingress:
+  enabled: true
+  hostname: "arch.homework"
+  path: "/grafana(/|$)(.*)"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2

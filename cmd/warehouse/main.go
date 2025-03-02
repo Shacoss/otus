@@ -2,11 +2,13 @@ package main
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
 	"otus/api/handlers"
 	"otus/internal/auth"
+	"otus/internal/metric"
 	"otus/internal/warehouse"
 	"otus/pkg/broker"
 	"otus/pkg/db"
@@ -24,14 +26,16 @@ func main() {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer rmq.Close()
+	metric.RegisterMetrics()
 	warehouseStore := warehouse.NewWarehouseStore(db)
 	warehouseService := warehouse.NewWarehouseService(rmq, *warehouseStore)
 	warehouseHandler := handlers.NewWarehouseHandler(*warehouseStore)
 	warehouseService.ReservationProduct("reservation_product")
 	warehouseService.ReservationRejectProduct("product_reservation_reject")
 	r := mux.NewRouter()
-	r.HandleFunc("/warehouse/product", auth.AuthMiddleware(warehouseHandler.GetAllProducts)).Methods("GET")
-	r.HandleFunc("/warehouse/product/{ProductID}", auth.AuthMiddleware(warehouseHandler.GetProductByID)).Methods("GET")
+	r.HandleFunc("/warehouse/product", metric.HttpMetricMiddleware(auth.AuthMiddleware(warehouseHandler.GetAllProducts), "/warehouse/product")).Methods("GET")
+	r.HandleFunc("/warehouse/product/{ProductID}", metric.HttpMetricMiddleware(auth.AuthMiddleware(warehouseHandler.GetProductByID), "/warehouse/product/{ProductID}")).Methods("GET")
+	r.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	port := os.Getenv("SERVER_PORT")
 	log.Println("Server running on " + port)
 	log.Fatal(http.ListenAndServe(port, r))

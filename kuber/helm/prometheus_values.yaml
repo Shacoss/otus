@@ -1,0 +1,36 @@
+alertmanager:
+  enabled: false
+server:
+  service:
+    type: "NodePort"
+  extraScrapeConfigs:
+    - job_name: 'order'
+      scrape_interval: 3s
+      metrics_path: /metrics
+      static_configs:
+        - targets: [ 'order-service-sv.otus-hw10.svc.cluster.local' ]
+    - job_name: 'warehouse'
+      scrape_interval: 3s
+      metrics_path: /metrics
+      static_configs:
+        - targets: [ 'warehouse-service-sv.otus-hw10.svc.cluster.local' ]
+    - job_name: 'billing'
+      scrape_interval: 3s
+      metrics_path: /metrics
+      static_configs:
+        - targets: [ 'billing-service-sv.otus-hw10.svc.cluster.local' ]
+    - job_name: 'delivery'
+      scrape_interval: 3s
+      metrics_path: /metrics
+      static_configs:
+        - targets: [ 'delivery-service-sv.otus-hw10.svc.cluster.local' ]
+    - job_name: 'notification'
+      scrape_interval: 3s
+      metrics_path: /metrics
+      static_configs:
+        - targets: [ 'notification-service-sv.otus-hw10.svc.cluster.local' ]
+    - job_name: 'auth'
+      scrape_interval: 3s
+      metrics_path: /metrics
+      static_configs:
+        - targets: [ 'auth-service-sv.otus-hw10.svc.cluster.local' ]

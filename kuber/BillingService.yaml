@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: billing-service-sv
-  namespace: otus-hw9
+  namespace: otus-hw10
 spec:
   selector:
     app: billing-service
